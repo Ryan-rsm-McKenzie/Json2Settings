@@ -1,3 +1,5 @@
 # Json2Settings
 
-This project uses [JSON for Modern C++](https://github.com/nlohmann/json).
+## Build Dependencies
+* [SKSE64](https://skse.silverlock.org/)
+* [JSON for Modern C++](https://github.com/nlohmann/json).
