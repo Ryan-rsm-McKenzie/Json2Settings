@@ -2,4 +2,5 @@
 
 ## Build Dependencies
 * [SKSE64](https://skse.silverlock.org/)
-* [JSON for Modern C++](https://github.com/nlohmann/json).
+
+This project uses [JSON for Modern C++](https://github.com/nlohmann/json).
