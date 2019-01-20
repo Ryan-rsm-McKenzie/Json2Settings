@@ -31,8 +31,8 @@ protected:
 };
 
 
-static std::vector<ISetting*>* settings = 0;
-static std::vector<ISetting*>* consoleSettings = 0;
+extern std::vector<ISetting*>* settings;
+extern std::vector<ISetting*>* consoleSettings;
 
 
 class bSetting : public ISetting

@@ -244,36 +244,36 @@ namespace Json2Settings
 
 				switch (it->type()) {
 				case json::value_t::array:
-				{
-					json jArr = it.value();
-					setting->assign(jArr);
+					{
+						json jArr = it.value();
+						setting->assign(jArr);
+					}
 					break;
-				}
 				case json::value_t::string:
-				{
-					std::string str = it.value();
-					setting->assign(str);
+					{
+						std::string str = it.value();
+						setting->assign(str);
+					}
 					break;
-				}
 				case json::value_t::boolean:
-				{
-					bool b = it.value();
-					setting->assign(b);
+					{
+						bool b = it.value();
+						setting->assign(b);
+					}
 					break;
-				}
 				case json::value_t::number_integer:
 				case json::value_t::number_unsigned:
-				{
-					int num = it.value();
-					setting->assign(num);
+					{
+						int num = it.value();
+						setting->assign(num);
+					}
 					break;
-				}
 				case json::value_t::number_float:
-				{
-					float num = it.value();
-					setting->assign(num);
+					{
+						float num = it.value();
+						setting->assign(num);
+					}
 					break;
-				}
 				default:
 					_DMESSAGE("[ERROR] Parsed value is of invalid type (%s)!\n", j.type_name());
 				}
@@ -327,3 +327,7 @@ namespace Json2Settings
 
 	std::string Settings::_fileName = "";
 }
+
+
+std::vector<ISetting*>* settings = 0;
+std::vector<ISetting*>* consoleSettings = 0;
