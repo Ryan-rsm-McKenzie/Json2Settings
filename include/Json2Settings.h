@@ -148,7 +148,7 @@ public:
 	virtual void dump() override
 	{
 		_DMESSAGE("%s:", _key.c_str());
-		for (auto& it = begin(); it != end(); ++it) {
+		for (auto it = begin(); it != end(); ++it) {
 			_DMESSAGE("\t%s", it->c_str());
 		}
 	}
@@ -156,7 +156,7 @@ public:
 	virtual std::string	getValueAsString() const override
 	{
 		std::string str = _key + ":";
-		for (auto& it = begin(); it != end(); ++it) {
+		for (auto it = begin(); it != end(); ++it) {
 			str += "\t" + *it + "\n";
 		}
 		return str;
