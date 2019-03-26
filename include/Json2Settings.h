@@ -1,17 +1,19 @@
 #pragma once
 
-#include <vector>  // vector
+#include <exception>  // exception
+#include <fstream>  // ifstream
 #include <string>  // string
+#include <vector>  // vector
 
 #include "json.hpp"  // json
 
 
 class ISetting
 {
-protected:
-	typedef nlohmann::json json;
-
 public:
+	using json = nlohmann::json;
+
+
 	ISetting() = delete;
 	ISetting(std::string a_key, bool a_consoleOK);
 	virtual ~ISetting();
@@ -31,8 +33,38 @@ protected:
 };
 
 
-extern std::vector<ISetting*>* settings;
-extern std::vector<ISetting*>* consoleSettings;
+inline ISetting::~ISetting()
+{}
+
+
+inline void ISetting::assign(bool a_val)
+{}
+
+
+inline void ISetting::assign(int a_val)
+{}
+
+
+inline void ISetting::assign(float a_val)
+{}
+
+
+inline void ISetting::assign(const char* a_val)
+{}
+
+
+inline void ISetting::assign(std::string a_val)
+{}
+
+
+inline void ISetting::assign(json& a_val)
+{}
+
+
+inline const std::string& ISetting::key() const
+{
+	return _key;
+}
 
 
 class bSetting : public ISetting
@@ -55,6 +87,52 @@ protected:
 };
 
 
+inline bSetting::bSetting(std::string a_key, bool a_consoleOK, bool a_value) :
+	ISetting(a_key, a_consoleOK),
+	_value(a_value)
+{}
+
+
+inline bSetting::~bSetting()
+{}
+
+
+inline void bSetting::assign(bool a_val)
+{
+	_value = a_val;
+}
+
+
+inline void bSetting::assign(int a_val)
+{
+	_value = a_val ? true : false;
+}
+
+
+inline void bSetting::assign(float a_val)
+{
+	_value = (int)a_val ? true : false;
+}
+
+
+inline void bSetting::dump()
+{
+	_DMESSAGE("%s: %s", _key.c_str(), _value ? "True" : "False");
+}
+
+
+inline std::string bSetting::getValueAsString() const
+{
+	return _value ? "True" : "False";
+}
+
+
+inline bSetting::operator bool() const
+{
+	return _value;
+}
+
+
 class iSetting : public ISetting
 {
 public:
@@ -72,6 +150,46 @@ public:
 protected:
 	SInt32 _value;
 };
+
+
+inline iSetting::iSetting(std::string a_key, bool a_consoleOK, SInt32 a_value) :
+	ISetting(a_key, a_consoleOK),
+	_value(a_value)
+{}
+
+
+inline iSetting:: ~iSetting()
+{}
+
+
+inline void iSetting::assign(int a_val)
+{
+	_value = a_val;
+}
+
+
+inline void iSetting::assign(float a_val)
+{
+	_value = (int)a_val;
+}
+
+
+inline void iSetting::dump()
+{
+	_DMESSAGE("%s: %i", _key.c_str(), _value);
+}
+
+
+inline std::string iSetting::getValueAsString() const
+{
+	return std::to_string(_value);
+}
+
+
+inline iSetting::operator SInt32() const
+{
+	return _value;
+}
 
 
 class fSetting : public ISetting
@@ -93,6 +211,46 @@ protected:
 };
 
 
+inline fSetting::fSetting(std::string a_key, bool a_consoleOK, float a_value) :
+	ISetting(a_key, a_consoleOK),
+	_value(a_value)
+{}
+
+
+inline fSetting::~fSetting()
+{}
+
+
+inline void fSetting::assign(int a_val)
+{
+	_value = (float)a_val;
+}
+
+
+inline void fSetting::assign(float a_val)
+{
+	_value = a_val;
+}
+
+
+inline void fSetting::dump()
+{
+	_DMESSAGE("%s: %f", _key.c_str(), _value);
+}
+
+
+inline std::string fSetting::getValueAsString() const
+{
+	return std::to_string(_value);
+}
+
+
+inline fSetting::operator float() const
+{
+	return _value;
+}
+
+
 class sSetting :
 	public ISetting,
 	public std::string
@@ -109,14 +267,42 @@ public:
 };
 
 
-template <typename T>
-class aSetting :
-	public ISetting,
-	public std::vector<T>
+inline sSetting::sSetting(std::string a_key, bool a_consoleOK, std::string a_value) :
+	ISetting(a_key, a_consoleOK),
+	std::string(a_value)
+{}
+
+
+inline sSetting::~sSetting()
+{}
+
+
+inline void sSetting::assign(std::string a_val)
 {
-	virtual ~aSetting()
-	{}
-};
+	std::string::operator=(a_val);
+}
+
+
+inline void sSetting::assign(const char* a_val)
+{
+	std::string::operator=(a_val);
+}
+
+
+inline void sSetting::dump()
+{
+	_DMESSAGE("%s: %s", _key.c_str(), c_str());
+}
+
+
+inline std::string sSetting::getValueAsString() const
+{
+	return data();
+}
+
+
+template <class>
+class aSetting;
 
 
 template <>
@@ -168,6 +354,7 @@ namespace Json2Settings
 {
 	class Settings
 	{
+		friend class ISetting;
 	public:
 		Settings() = delete;
 
@@ -176,9 +363,122 @@ namespace Json2Settings
 		static void			dump();
 		static void			setFileName(const char* a_fileName);
 
-		static void			free();
+	protected:
+		static inline std::vector<ISetting*>	settings;
+		static inline std::vector<ISetting*>	consoleSettings;
 
 	private:
-		static std::string _fileName;
+		static inline std::string _fileName = "";
 	};
+
+
+	inline bool Settings::loadSettings(bool a_dumpParse)
+	{
+		using nlohmann::json;
+
+		std::ifstream istream(_fileName.c_str());
+		if (!istream.is_open()) {
+			_ERROR("[ERROR] Failed to open .json file!\n");
+		}
+		json j;
+		try {
+			istream >> j;
+			if (a_dumpParse) {
+				_DMESSAGE("[DEBUG] PARSE DUMP\n%s\n", j.dump(4).c_str());
+			}
+			json::iterator it;
+			for (auto& setting : settings) {
+				it = j.find(setting->key());
+
+				if (it == j.end()) {
+					_ERROR("[ERROR] Failed to find (%s) within .json!\n", setting->key().c_str());
+					continue;
+				}
+
+				switch (it->type()) {
+				case json::value_t::array:
+					{
+						json jArr = it.value();
+						setting->assign(jArr);
+					}
+					break;
+				case json::value_t::string:
+					{
+						std::string str = it.value();
+						setting->assign(str);
+					}
+					break;
+				case json::value_t::boolean:
+					{
+						bool b = it.value();
+						setting->assign(b);
+					}
+					break;
+				case json::value_t::number_integer:
+				case json::value_t::number_unsigned:
+					{
+						int num = it.value();
+						setting->assign(num);
+					}
+					break;
+				case json::value_t::number_float:
+					{
+						float num = it.value();
+						setting->assign(num);
+					}
+					break;
+				default:
+					_DMESSAGE("[ERROR] Parsed value is of invalid type (%s)!\n", j.type_name());
+				}
+			}
+		} catch (std::exception& e) {
+			_ERROR("[ERROR] Failed to parse .json file!\n");
+			_ERROR(e.what());
+			istream.close();
+			return false;
+		}
+
+		istream.close();
+		return true;
+	}
+
+
+	inline ISetting* Settings::set(std::string& a_key, int a_val)
+	{
+		for (auto& setting : consoleSettings) {
+			if (setting->key() == a_key) {
+				setting->assign(a_val);
+				return setting;
+			}
+		}
+		return 0;
+	}
+
+
+	inline void Settings::dump()
+	{
+		_DMESSAGE("=== SETTINGS DUMP BEGIN ===");
+		for (auto& setting : settings) {
+			setting->dump();
+		}
+		_DMESSAGE("=== SETTINGS DUMP END ===");
+	}
+
+
+	inline void Settings::setFileName(const char* a_fileName)
+	{
+		_fileName = a_fileName;
+	}
+}
+
+
+inline ISetting::ISetting(std::string a_key, bool a_consoleOK) :
+	_key(a_key)
+{
+	using Json2Settings::Settings;
+
+	Settings::settings.push_back(this);
+	if (a_consoleOK) {
+		Settings::consoleSettings.push_back(this);
+	}
 }

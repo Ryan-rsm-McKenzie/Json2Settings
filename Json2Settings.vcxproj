@@ -141,9 +141,6 @@
     <None Include="exports.def" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\Json2Settings.cpp" />
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="include\json.hpp" />
     <ClInclude Include="include\Json2Settings.h" />
   </ItemGroup>
