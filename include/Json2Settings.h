@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>  // int32_t
 #include <exception>  // exception
 #include <fstream>  // ifstream
 #include <string>  // string
@@ -137,7 +138,7 @@ class iSetting : public ISetting
 {
 public:
 	iSetting() = delete;
-	iSetting(std::string a_key, bool a_consoleOK, SInt32 a_value);
+	iSetting(std::string a_key, bool a_consoleOK, std::int32_t a_value);
 	virtual ~iSetting();
 
 	virtual void		assign(int a_val) override;
@@ -145,14 +146,14 @@ public:
 	virtual void		dump() override;
 	virtual std::string	getValueAsString() const override;
 
-	operator SInt32() const;
+	operator std::int32_t() const;
 
 protected:
-	SInt32 _value;
+	std::int32_t _value;
 };
 
 
-inline iSetting::iSetting(std::string a_key, bool a_consoleOK, SInt32 a_value) :
+inline iSetting::iSetting(std::string a_key, bool a_consoleOK, std::int32_t a_value) :
 	ISetting(a_key, a_consoleOK),
 	_value(a_value)
 {}
@@ -186,7 +187,7 @@ inline std::string iSetting::getValueAsString() const
 }
 
 
-inline iSetting::operator SInt32() const
+inline iSetting::operator std::int32_t() const
 {
 	return _value;
 }
@@ -301,8 +302,7 @@ inline std::string sSetting::getValueAsString() const
 }
 
 
-template <class>
-class aSetting;
+template <class> class aSetting;
 
 
 template <>
@@ -380,6 +380,7 @@ namespace Json2Settings
 		if (!istream.is_open()) {
 			_ERROR("[ERROR] Failed to open .json file!\n");
 		}
+
 		json j;
 		try {
 			istream >> j;
