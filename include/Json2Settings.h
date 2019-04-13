@@ -364,11 +364,11 @@ namespace Json2Settings
 		static void			setFileName(const char* a_fileName);
 
 	protected:
-		static inline std::vector<ISetting*>	settings;
-		static inline std::vector<ISetting*>	consoleSettings;
+		inline static std::vector<ISetting*> settings;
+		inline static std::unordered_map<std::string, ISetting*> consoleSettings;
 
 	private:
-		static inline std::string _fileName = "";
+		inline static std::string _fileName = "";
 	};
 
 
@@ -446,13 +446,13 @@ namespace Json2Settings
 
 	inline ISetting* Settings::set(std::string& a_key, int a_val)
 	{
-		for (auto& setting : consoleSettings) {
-			if (setting->key() == a_key) {
-				setting->assign(a_val);
-				return setting;
-			}
+		auto it = consoleSettings.find(a_key);
+		if (it != consoleSettings.end()) {
+			it->second->assign(a_val);
+			return it->second;
+		} else {
+			return 0;
 		}
-		return 0;
 	}
 
 
@@ -480,6 +480,6 @@ inline ISetting::ISetting(std::string a_key, bool a_consoleOK) :
 
 	Settings::settings.push_back(this);
 	if (a_consoleOK) {
-		Settings::consoleSettings.push_back(this);
+		Settings::consoleSettings.insert(std::make_pair(_key, this));
 	}
 }
