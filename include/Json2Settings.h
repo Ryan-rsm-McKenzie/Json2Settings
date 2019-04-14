@@ -364,8 +364,8 @@ namespace Json2Settings
 		static void			setFileName(const char* a_fileName);
 
 	protected:
-		inline static std::vector<ISetting*> settings;
-		inline static std::unordered_map<std::string, ISetting*> consoleSettings;
+		inline static std::vector<ISetting*>* settings = 0;
+		inline static std::unordered_map<std::string, ISetting*>* consoleSettings = 0;
 
 	private:
 		inline static std::string _fileName = "";
@@ -387,49 +387,52 @@ namespace Json2Settings
 			if (a_dumpParse) {
 				_DMESSAGE("[DEBUG] PARSE DUMP\n%s\n", j.dump(4).c_str());
 			}
-			json::iterator it;
-			for (auto& setting : settings) {
-				it = j.find(setting->key());
 
-				if (it == j.end()) {
-					_ERROR("[ERROR] Failed to find (%s) within .json!\n", setting->key().c_str());
-					continue;
-				}
+			if (settings) {
+				json::iterator it;
+				for (auto& setting : *settings) {
+					it = j.find(setting->key());
 
-				switch (it->type()) {
-				case json::value_t::array:
-					{
-						json jArr = it.value();
-						setting->assign(jArr);
+					if (it == j.end()) {
+						_ERROR("[ERROR] Failed to find (%s) within .json!\n", setting->key().c_str());
+						continue;
 					}
-					break;
-				case json::value_t::string:
-					{
-						std::string str = it.value();
-						setting->assign(str);
+
+					switch (it->type()) {
+					case json::value_t::array:
+						{
+							json jArr = it.value();
+							setting->assign(jArr);
+						}
+						break;
+					case json::value_t::string:
+						{
+							std::string str = it.value();
+							setting->assign(str);
+						}
+						break;
+					case json::value_t::boolean:
+						{
+							bool b = it.value();
+							setting->assign(b);
+						}
+						break;
+					case json::value_t::number_integer:
+					case json::value_t::number_unsigned:
+						{
+							int num = it.value();
+							setting->assign(num);
+						}
+						break;
+					case json::value_t::number_float:
+						{
+							float num = it.value();
+							setting->assign(num);
+						}
+						break;
+					default:
+						_DMESSAGE("[ERROR] Parsed value is of invalid type (%s)!\n", j.type_name());
 					}
-					break;
-				case json::value_t::boolean:
-					{
-						bool b = it.value();
-						setting->assign(b);
-					}
-					break;
-				case json::value_t::number_integer:
-				case json::value_t::number_unsigned:
-					{
-						int num = it.value();
-						setting->assign(num);
-					}
-					break;
-				case json::value_t::number_float:
-					{
-						float num = it.value();
-						setting->assign(num);
-					}
-					break;
-				default:
-					_DMESSAGE("[ERROR] Parsed value is of invalid type (%s)!\n", j.type_name());
 				}
 			}
 		} catch (std::exception& e) {
@@ -446,8 +449,8 @@ namespace Json2Settings
 
 	inline ISetting* Settings::set(std::string& a_key, int a_val)
 	{
-		auto it = consoleSettings.find(a_key);
-		if (it != consoleSettings.end()) {
+		auto it = consoleSettings->find(a_key);
+		if (it != consoleSettings->end()) {
 			it->second->assign(a_val);
 			return it->second;
 		} else {
@@ -459,8 +462,10 @@ namespace Json2Settings
 	inline void Settings::dump()
 	{
 		_DMESSAGE("=== SETTINGS DUMP BEGIN ===");
-		for (auto& setting : settings) {
-			setting->dump();
+		if (settings) {
+			for (auto& setting : *settings) {
+				setting->dump();
+			}
 		}
 		_DMESSAGE("=== SETTINGS DUMP END ===");
 	}
@@ -478,8 +483,15 @@ inline ISetting::ISetting(std::string a_key, bool a_consoleOK) :
 {
 	using Json2Settings::Settings;
 
-	Settings::settings.push_back(this);
+	static bool init = false;
+	if (!init) {
+		Settings::settings = new std::remove_pointer_t<decltype(Settings::settings)>;
+		Settings::consoleSettings = new std::remove_pointer_t<decltype(Settings::consoleSettings)>;
+		init = true;
+	}
+
+	Settings::settings->push_back(this);
 	if (a_consoleOK) {
-		Settings::consoleSettings.insert(std::make_pair(_key, this));
+		Settings::consoleSettings->insert(std::make_pair(_key, this));
 	}
 }
