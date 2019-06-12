@@ -6,7 +6,7 @@
 #include <string>  // string
 #include <vector>  // vector
 
-#include "json.hpp"  // json
+#include "json/single_include/nlohmann/json.hpp"  // json
 
 
 class ISetting

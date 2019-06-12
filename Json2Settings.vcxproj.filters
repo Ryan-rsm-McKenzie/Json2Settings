@@ -12,8 +12,5 @@
     <ClInclude Include="include\Json2Settings.h">
       <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="include\json.hpp">
-      <Filter>include</Filter>
-    </ClInclude>
   </ItemGroup>
 </Project>
