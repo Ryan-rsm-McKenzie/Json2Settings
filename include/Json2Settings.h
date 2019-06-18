@@ -8,6 +8,30 @@
 
 #include "json/single_include/nlohmann/json.hpp"  // json
 
+#ifndef _FATALERROR
+#define _FATALERROR(a_fmt, ...)	(void(0))
+#endif
+
+#ifndef _ERROR
+#define _ERROR(a_fmt, ...)	(void(0))
+#endif
+
+#ifndef _WARNING
+#define _WARNING(a_fmt, ...)	(void(0))
+#endif
+
+#ifndef _MESSAGE
+#define _MESSAGE(a_fmt, ...)	(void(0))
+#endif
+
+#ifndef _VMESSAGE
+#define _VMESSAGE(a_fmt, ...)	(void(0))
+#endif
+
+#ifndef _DMESSAGE
+#define _DMESSAGE(a_fmt, ...)	(void(0))
+#endif
+
 
 class ISetting
 {
@@ -30,7 +54,7 @@ public:
 	const std::string&	key() const;
 
 protected:
-	std::string	_key;
+	std::string _key;
 };
 
 
@@ -358,32 +382,28 @@ namespace Json2Settings
 	public:
 		Settings() = delete;
 
-		static bool			loadSettings(bool a_dumpParse = false);
+		static bool			loadSettings(const char* a_fileName, bool a_suppressWarnings = false, bool a_dumpParse = false);
 		static ISetting*	set(std::string& a_key, int a_val);
 		static void			dump();
-		static void			setFileName(const char* a_fileName);
 
 	protected:
 		static std::vector<ISetting*>&						settings();
 		static std::unordered_map<std::string, ISetting*>&	consoleSettings();
-
-	private:
-		inline static std::string _fileName = "";
 	};
 
 
-	inline bool Settings::loadSettings(bool a_dumpParse)
+	inline bool Settings::loadSettings(const char* a_fileName, bool a_suppressWarnings, bool a_dumpParse)
 	{
 		using nlohmann::json;
 
-		std::ifstream istream(_fileName.c_str());
-		if (!istream.is_open()) {
+		std::ifstream inFile(a_fileName);
+		if (!inFile.is_open()) {
 			_ERROR("[ERROR] Failed to open .json file!\n");
 		}
 
 		json j;
 		try {
-			istream >> j;
+			inFile >> j;
 			if (a_dumpParse) {
 				_DMESSAGE("[DEBUG] PARSE DUMP\n%s\n", j.dump(4).c_str());
 			}
@@ -393,7 +413,9 @@ namespace Json2Settings
 				it = j.find(setting->key());
 
 				if (it == j.end()) {
-					_ERROR("[ERROR] Failed to find (%s) within .json!\n", setting->key().c_str());
+					if (!a_suppressWarnings) {
+						_WARNING("[WARNING] Failed to find (%s) within .json!", setting->key().c_str());
+					}
 					continue;
 				}
 
@@ -436,11 +458,9 @@ namespace Json2Settings
 		} catch (std::exception& e) {
 			_ERROR("[ERROR] Failed to parse .json file!\n");
 			_ERROR(e.what());
-			istream.close();
 			return false;
 		}
 
-		istream.close();
 		return true;
 	}
 
@@ -464,12 +484,6 @@ namespace Json2Settings
 			setting->dump();
 		}
 		_DMESSAGE("=== SETTINGS DUMP END ===");
-	}
-
-
-	inline void Settings::setFileName(const char* a_fileName)
-	{
-		_fileName = a_fileName;
 	}
 
 
