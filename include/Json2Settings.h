@@ -6,31 +6,10 @@
 #include <string>  // string
 #include <vector>  // vector
 
-#include "json/single_include/nlohmann/json.hpp"  // json
-
-#ifndef _FATALERROR
-#define _FATALERROR(a_fmt, ...)	(void(0))
-#endif
-
-#ifndef _ERROR
-#define _ERROR(a_fmt, ...)	(void(0))
-#endif
-
-#ifndef _WARNING
-#define _WARNING(a_fmt, ...)	(void(0))
-#endif
-
-#ifndef _MESSAGE
-#define _MESSAGE(a_fmt, ...)	(void(0))
-#endif
-
-#ifndef _VMESSAGE
-#define _VMESSAGE(a_fmt, ...)	(void(0))
-#endif
-
-#ifndef _DMESSAGE
-#define _DMESSAGE(a_fmt, ...)	(void(0))
-#endif
+#include <CppCoreCheck\Warnings.h>
+#pragma warning(disable: ALL_CPPCORECHECK_WARNINGS)
+#include "json.hpp"  // json
+#pragma warning(default: ALL_CPPCORECHECK_WARNINGS)
 
 
 class ISetting
@@ -398,14 +377,14 @@ namespace Json2Settings
 
 		std::ifstream inFile(a_fileName);
 		if (!inFile.is_open()) {
-			_ERROR("[ERROR] Failed to open .json file!\n");
+			_ERROR("Failed to open .json file!\n");
 		}
 
 		json j;
 		try {
 			inFile >> j;
 			if (a_dumpParse) {
-				_DMESSAGE("[DEBUG] PARSE DUMP\n%s\n", j.dump(4).c_str());
+				_DMESSAGE("PARSE DUMP\n%s\n", j.dump(4).c_str());
 			}
 
 			json::iterator it;
@@ -414,7 +393,7 @@ namespace Json2Settings
 
 				if (it == j.end()) {
 					if (!a_suppressWarnings) {
-						_WARNING("[WARNING] Failed to find (%s) within .json!", setting->key().c_str());
+						_WARNING("Failed to find (%s) within .json!", setting->key().c_str());
 					}
 					continue;
 				}
@@ -452,11 +431,11 @@ namespace Json2Settings
 					}
 					break;
 				default:
-					_DMESSAGE("[ERROR] Parsed value is of invalid type (%s)!\n", j.type_name());
+					_DMESSAGE("Parsed value is of invalid type (%s)!\n", j.type_name());
 				}
 			}
 		} catch (std::exception& e) {
-			_ERROR("[ERROR] Failed to parse .json file!\n");
+			_ERROR("Failed to parse .json file!\n");
 			_ERROR(e.what());
 			return false;
 		}
