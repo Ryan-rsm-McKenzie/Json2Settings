@@ -75,7 +75,7 @@ class bSetting : public ISetting
 {
 public:
 	bSetting() = delete;
-	bSetting(std::string a_key, bool a_consoleOK, bool a_value);
+	bSetting(std::string a_key, bool a_value, bool a_consoleOK = true);
 	virtual ~bSetting();
 
 	virtual void		assign(bool a_val) override;
@@ -91,7 +91,7 @@ protected:
 };
 
 
-inline bSetting::bSetting(std::string a_key, bool a_consoleOK, bool a_value) :
+inline bSetting::bSetting(std::string a_key, bool a_value, bool a_consoleOK) :
 	ISetting(a_key, a_consoleOK),
 	_value(a_value)
 {}
@@ -141,7 +141,7 @@ class iSetting : public ISetting
 {
 public:
 	iSetting() = delete;
-	iSetting(std::string a_key, bool a_consoleOK, std::int32_t a_value);
+	iSetting(std::string a_key, std::int32_t a_value, bool a_consoleOK = true);
 	virtual ~iSetting();
 
 	virtual void		assign(int a_val) override;
@@ -156,7 +156,7 @@ protected:
 };
 
 
-inline iSetting::iSetting(std::string a_key, bool a_consoleOK, std::int32_t a_value) :
+inline iSetting::iSetting(std::string a_key, std::int32_t a_value, bool a_consoleOK) :
 	ISetting(a_key, a_consoleOK),
 	_value(a_value)
 {}
@@ -200,7 +200,7 @@ class fSetting : public ISetting
 {
 public:
 	fSetting() = delete;
-	fSetting(std::string a_key, bool a_consoleOK, float a_value);
+	fSetting(std::string a_key, float a_value, bool a_consoleOK = true);
 	virtual ~fSetting();
 
 	virtual void		assign(int a_val) override;
@@ -215,7 +215,7 @@ protected:
 };
 
 
-inline fSetting::fSetting(std::string a_key, bool a_consoleOK, float a_value) :
+inline fSetting::fSetting(std::string a_key, float a_value, bool a_consoleOK) :
 	ISetting(a_key, a_consoleOK),
 	_value(a_value)
 {}
@@ -261,7 +261,7 @@ class sSetting :
 {
 public:
 	sSetting() = delete;
-	sSetting(std::string a_key, bool a_consoleOK, std::string a_value);
+	sSetting(std::string a_key, std::string a_value, bool a_consoleOK = false);
 	virtual ~sSetting();
 
 	virtual void		assign(std::string a_val) override;
@@ -271,7 +271,7 @@ public:
 };
 
 
-inline sSetting::sSetting(std::string a_key, bool a_consoleOK, std::string a_value) :
+inline sSetting::sSetting(std::string a_key, std::string a_value, bool a_consoleOK) :
 	ISetting(a_key, a_consoleOK),
 	std::string(a_value)
 {}
@@ -318,7 +318,7 @@ private:
 
 public:
 	aSetting() = delete;
-	aSetting(std::string a_key, bool a_consoleOK, std::initializer_list<std::string> a_list = {}) :
+	aSetting(std::string a_key, std::initializer_list<std::string> a_list = {}, bool a_consoleOK = false) :
 		ISetting(a_key, a_consoleOK),
 		std::vector<std::string>(a_list)
 	{}
@@ -371,7 +371,7 @@ namespace Json2Settings
 	};
 
 
-	inline bool Settings::loadSettings(const char* a_fileName, bool a_suppressWarnings, bool a_dumpParse)
+	inline bool Settings::loadSettings(const char* a_fileName, bool a_dumpParse, bool a_suppressWarnings)
 	{
 		using nlohmann::json;
 
