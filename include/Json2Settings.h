@@ -378,6 +378,7 @@ namespace Json2Settings
 		std::ifstream inFile(a_fileName);
 		if (!inFile.is_open()) {
 			_ERROR("Failed to open .json file!\n");
+			return false;
 		}
 
 		json j;
