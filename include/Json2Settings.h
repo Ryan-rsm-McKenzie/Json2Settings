@@ -1,494 +1,449 @@
 #pragma once
 
-#include <cstdint>  // int32_t
-#include <exception>  // exception
-#include <fstream>  // ifstream
-#include <string>  // string
-#include <vector>  // vector
+#include <cstdarg>
+#include <cstdio>
+#include <exception>
+#include <filesystem>
+#include <fstream>
+#include <memory>
+#include <string>
+#include <type_traits>
+#include <utility>
+#include <vector>
 
 #include <CppCoreCheck\Warnings.h>
 #pragma warning(disable: ALL_CPPCORECHECK_WARNINGS)
-#include "json.hpp"  // json
+#include "json.hpp"
 #pragma warning(default: ALL_CPPCORECHECK_WARNINGS)
-
-
-class ISetting
-{
-public:
-	using json = nlohmann::json;
-
-
-	ISetting() = delete;
-	ISetting(std::string a_key, bool a_consoleOK);
-	virtual ~ISetting();
-
-	virtual void		assign(bool a_val);
-	virtual void		assign(int a_val);
-	virtual void		assign(float a_val);
-	virtual void		assign(const char* a_val);
-	virtual void		assign(std::string a_val);
-	virtual void		assign(json& a_val);
-	virtual void		dump() = 0;
-	virtual std::string	getValueAsString() const = 0;
-	const std::string&	key() const;
-
-protected:
-	std::string _key;
-};
-
-
-inline ISetting::~ISetting()
-{}
-
-
-inline void ISetting::assign(bool a_val)
-{}
-
-
-inline void ISetting::assign(int a_val)
-{}
-
-
-inline void ISetting::assign(float a_val)
-{}
-
-
-inline void ISetting::assign(const char* a_val)
-{}
-
-
-inline void ISetting::assign(std::string a_val)
-{}
-
-
-inline void ISetting::assign(json& a_val)
-{}
-
-
-inline const std::string& ISetting::key() const
-{
-	return _key;
-}
-
-
-class bSetting : public ISetting
-{
-public:
-	bSetting() = delete;
-	bSetting(std::string a_key, bool a_value, bool a_consoleOK = true);
-	virtual ~bSetting();
-
-	virtual void		assign(bool a_val) override;
-	virtual void		assign(int a_val) override;
-	virtual void		assign(float a_val) override;
-	virtual void		dump() override;
-	virtual std::string	getValueAsString() const override;
-
-	operator bool() const;
-
-protected:
-	bool _value;
-};
-
-
-inline bSetting::bSetting(std::string a_key, bool a_value, bool a_consoleOK) :
-	ISetting(a_key, a_consoleOK),
-	_value(a_value)
-{}
-
-
-inline bSetting::~bSetting()
-{}
-
-
-inline void bSetting::assign(bool a_val)
-{
-	_value = a_val;
-}
-
-
-inline void bSetting::assign(int a_val)
-{
-	_value = a_val ? true : false;
-}
-
-
-inline void bSetting::assign(float a_val)
-{
-	_value = (int)a_val ? true : false;
-}
-
-
-inline void bSetting::dump()
-{
-	_DMESSAGE("%s: %s", _key.c_str(), _value ? "True" : "False");
-}
-
-
-inline std::string bSetting::getValueAsString() const
-{
-	return _value ? "True" : "False";
-}
-
-
-inline bSetting::operator bool() const
-{
-	return _value;
-}
-
-
-class iSetting : public ISetting
-{
-public:
-	iSetting() = delete;
-	iSetting(std::string a_key, std::int32_t a_value, bool a_consoleOK = true);
-	virtual ~iSetting();
-
-	virtual void		assign(int a_val) override;
-	virtual void		assign(float a_val) override;
-	virtual void		dump() override;
-	virtual std::string	getValueAsString() const override;
-
-	operator std::int32_t() const;
-
-protected:
-	std::int32_t _value;
-};
-
-
-inline iSetting::iSetting(std::string a_key, std::int32_t a_value, bool a_consoleOK) :
-	ISetting(a_key, a_consoleOK),
-	_value(a_value)
-{}
-
-
-inline iSetting:: ~iSetting()
-{}
-
-
-inline void iSetting::assign(int a_val)
-{
-	_value = a_val;
-}
-
-
-inline void iSetting::assign(float a_val)
-{
-	_value = (int)a_val;
-}
-
-
-inline void iSetting::dump()
-{
-	_DMESSAGE("%s: %i", _key.c_str(), _value);
-}
-
-
-inline std::string iSetting::getValueAsString() const
-{
-	return std::to_string(_value);
-}
-
-
-inline iSetting::operator std::int32_t() const
-{
-	return _value;
-}
-
-
-class fSetting : public ISetting
-{
-public:
-	fSetting() = delete;
-	fSetting(std::string a_key, float a_value, bool a_consoleOK = true);
-	virtual ~fSetting();
-
-	virtual void		assign(int a_val) override;
-	virtual void		assign(float a_val) override;
-	virtual void		dump() override;
-	virtual std::string	getValueAsString() const override;
-
-	operator float() const;
-
-protected:
-	float _value;
-};
-
-
-inline fSetting::fSetting(std::string a_key, float a_value, bool a_consoleOK) :
-	ISetting(a_key, a_consoleOK),
-	_value(a_value)
-{}
-
-
-inline fSetting::~fSetting()
-{}
-
-
-inline void fSetting::assign(int a_val)
-{
-	_value = (float)a_val;
-}
-
-
-inline void fSetting::assign(float a_val)
-{
-	_value = a_val;
-}
-
-
-inline void fSetting::dump()
-{
-	_DMESSAGE("%s: %f", _key.c_str(), _value);
-}
-
-
-inline std::string fSetting::getValueAsString() const
-{
-	return std::to_string(_value);
-}
-
-
-inline fSetting::operator float() const
-{
-	return _value;
-}
-
-
-class sSetting :
-	public ISetting,
-	public std::string
-{
-public:
-	sSetting() = delete;
-	sSetting(std::string a_key, std::string a_value, bool a_consoleOK = false);
-	virtual ~sSetting();
-
-	virtual void		assign(std::string a_val) override;
-	virtual void		assign(const char* a_val) override;
-	virtual void		dump() override;
-	virtual std::string	getValueAsString() const override;
-};
-
-
-inline sSetting::sSetting(std::string a_key, std::string a_value, bool a_consoleOK) :
-	ISetting(a_key, a_consoleOK),
-	std::string(a_value)
-{}
-
-
-inline sSetting::~sSetting()
-{}
-
-
-inline void sSetting::assign(std::string a_val)
-{
-	std::string::operator=(a_val);
-}
-
-
-inline void sSetting::assign(const char* a_val)
-{
-	std::string::operator=(a_val);
-}
-
-
-inline void sSetting::dump()
-{
-	_DMESSAGE("%s: %s", _key.c_str(), c_str());
-}
-
-
-inline std::string sSetting::getValueAsString() const
-{
-	return data();
-}
-
-
-template <class> class aSetting;
-
-
-template <>
-class aSetting<std::string> :
-	public ISetting,
-	public std::vector<std::string>
-{
-private:
-	using json = nlohmann::json;
-
-public:
-	aSetting() = delete;
-	aSetting(std::string a_key, std::initializer_list<std::string> a_list = {}, bool a_consoleOK = false) :
-		ISetting(a_key, a_consoleOK),
-		std::vector<std::string>(a_list)
-	{}
-
-	virtual ~aSetting()
-	{}
-
-	virtual void assign(json& a_val) override
-	{
-		clear();
-		for (auto& val : a_val) {
-			emplace_back(val.get<std::string>());
-		}
-	}
-
-	virtual void dump() override
-	{
-		_DMESSAGE("%s:", _key.c_str());
-		for (auto it = begin(); it != end(); ++it) {
-			_DMESSAGE("\t%s", it->c_str());
-		}
-	}
-
-	virtual std::string	getValueAsString() const override
-	{
-		std::string str = _key + ":";
-		for (auto it = begin(); it != end(); ++it) {
-			str += "\t" + *it + "\n";
-		}
-		return str;
-	}
-};
 
 
 namespace Json2Settings
 {
-	class Settings
+	using json = nlohmann::json;
+
+	using boolean_t = json::boolean_t;
+	using integer_t = json::number_integer_t;
+	using unsigned_t = json::number_unsigned_t;
+	using float_t = json::number_float_t;
+	using string_t = json::string_t;
+	using char_t = string_t::value_type;
+
+	static_assert(std::is_same<std::string, string_t>::value);
+
+
+	namespace Impl
 	{
-		friend class ISetting;
-	public:
-		Settings() = delete;
-
-		static bool			loadSettings(const char* a_fileName, bool a_suppressWarnings = false, bool a_dumpParse = false);
-		static ISetting*	set(std::string& a_key, int a_val);
-		static void			dump();
-
-	protected:
-		static std::vector<ISetting*>&						settings();
-		static std::unordered_map<std::string, ISetting*>&	consoleSettings();
-	};
-
-
-	inline bool Settings::loadSettings(const char* a_fileName, bool a_dumpParse, bool a_suppressWarnings)
-	{
-		using nlohmann::json;
-
-		std::ifstream inFile(a_fileName);
-		if (!inFile.is_open()) {
-			_ERROR("Failed to open .json file!\n");
-			return false;
-		}
-
-		json j;
-		try {
-			inFile >> j;
-			if (a_dumpParse) {
-				_DMESSAGE("PARSE DUMP\n%s\n", j.dump(4).c_str());
+		class VArgFormatter
+		{
+		public:
+			VArgFormatter(const char_t* a_format, ...) :
+				_buf()
+			{
+				std::va_list args;
+				va_start(args, a_format);
+				do_format(a_format, args);
+				va_end(args);
 			}
 
-			json::iterator it;
-			for (auto& setting : settings()) {
-				it = j.find(setting->key());
-
-				if (it == j.end()) {
-					if (!a_suppressWarnings) {
-						_WARNING("Failed to find (%s) within .json!", setting->key().c_str());
-					}
-					continue;
-				}
-
-				switch (it->type()) {
-				case json::value_t::array:
-					{
-						json jArr = it.value();
-						setting->assign(jArr);
-					}
-					break;
-				case json::value_t::string:
-					{
-						std::string str = it.value();
-						setting->assign(str);
-					}
-					break;
-				case json::value_t::boolean:
-					{
-						bool b = it.value();
-						setting->assign(b);
-					}
-					break;
-				case json::value_t::number_integer:
-				case json::value_t::number_unsigned:
-					{
-						int num = it.value();
-						setting->assign(num);
-					}
-					break;
-				case json::value_t::number_float:
-					{
-						float num = it.value();
-						setting->assign(num);
-					}
-					break;
-				default:
-					_DMESSAGE("Parsed value is of invalid type (%s)!\n", j.type_name());
-				}
+			VArgFormatter(const char_t* a_format, std::va_list a_args) :
+				_buf()
+			{
+				do_format(a_format, a_args);
 			}
-		} catch (std::exception& e) {
-			_ERROR("Failed to parse .json file!\n");
-			_ERROR(e.what());
-			return false;
-		}
 
-		return true;
+			inline void operator()(const char_t* a_format, ...)
+			{
+				std::va_list args;
+				va_start(args, a_format);
+				do_format(a_format, args);
+				va_end(args);
+			}
+
+			inline void operator()(const char_t* a_format, std::va_list a_args)
+			{
+				do_format(a_format, a_args);
+			}
+
+			[[nodiscard]] inline string_t str() const
+			{
+				return c_str();
+			}
+
+			[[nodiscard]] inline const char_t* c_str() const
+			{
+				return _buf.data();
+			}
+
+		private:
+			inline void do_format(const char_t* a_format, std::va_list a_args)
+			{
+				std::va_list argsCopy;
+				va_copy(argsCopy, a_args);
+
+				_buf.resize(static_cast<std::size_t>(std::vsnprintf(0, 0, a_format, a_args)) + 1);
+				std::vsnprintf(_buf.data(), _buf.size(), a_format, argsCopy);
+
+				va_end(argsCopy);
+			}
+
+			std::vector<char_t> _buf;
+		};
+
+
+		[[nodiscard]] inline string_t format(const char* a_format, ...)
+		{
+			std::va_list args;
+			va_start(args, a_format);
+			string_t str(VArgFormatter(a_format, args).str());
+			va_end(args);
+			return str;
+		}
 	}
 
 
-	inline ISetting* Settings::set(std::string& a_key, int a_val)
-	{
-		auto it = consoleSettings().find(a_key);
-		if (it != consoleSettings().end()) {
-			it->second->assign(a_val);
-			return it->second;
-		} else {
-			return 0;
-		}
-	}
+	class ISetting;
 
 
-	inline void Settings::dump()
-	{
-		_DMESSAGE("=== SETTINGS DUMP BEGIN ===");
-		for (auto& setting : settings()) {
-			setting->dump();
-		}
-		_DMESSAGE("=== SETTINGS DUMP END ===");
-	}
-
-
-	inline std::vector<ISetting*>& Settings::settings()
+	inline std::vector<ISetting*>& get_settings()
 	{
 		static std::vector<ISetting*> settings;
 		return settings;
 	}
 
 
-	inline std::unordered_map<std::string, ISetting*>& Settings::consoleSettings()
+	class ISetting
 	{
-		static std::unordered_map<std::string, ISetting*> consoleSettings;
-		return consoleSettings;
+	public:
+		ISetting() = delete;
+		ISetting(string_t a_key) : _key(std::move(a_key)) { get_settings().push_back(this); }
+		virtual ~ISetting() { auto& set = get_settings(); auto it = std::find(set.begin(), set.end(), this); if (it != set.end()) set.erase(it); }
+
+		inline void assign(boolean_t a_val) { assign_impl(a_val); }
+		inline void assign(integer_t a_val) { assign_impl(a_val); }
+		inline void assign(unsigned_t a_val) { assign_impl(a_val); }
+		inline void assign(float_t a_val) { assign_impl(a_val); }
+		inline void assign(const char_t* a_val) { assign_impl(string_t(a_val)); }
+		inline void assign(const string_t& a_val) { assign_impl(string_t(a_val)); }
+		inline void assign(string_t&& a_val) { assign_impl(std::move(a_val)); }
+		inline void assign(const json& a_val) { assign_impl(a_val); }
+		inline void assign(json&& a_val) { assign_impl(a_val); }
+
+		inline ISetting& operator=(boolean_t a_val) { assign(a_val); }
+		inline ISetting& operator=(integer_t a_val) { assign(a_val); }
+		inline ISetting& operator=(unsigned_t a_val) { assign(a_val); }
+		inline ISetting& operator=(float_t a_val) { assign(a_val); }
+		inline ISetting& operator=(const char_t* a_val) { assign(a_val); }
+		inline ISetting& operator=(const string_t& a_val) { assign(a_val); }
+		inline ISetting& operator=(string_t&& a_val) { assign(std::move(a_val)); }
+		inline ISetting& operator=(const json& a_val) { assign(a_val); }
+		inline ISetting& operator=(json&& a_val) { assign(std::move(a_val)); }
+
+		[[nodiscard]] inline string_t dump() const { return dump_impl(); }
+		[[nodiscard]] inline string_t to_string() const { return to_string_impl(); }
+		[[nodiscard]] inline const string_t& key() const { return _key; }
+
+	protected:
+		virtual void assign_impl([[maybe_unused]] boolean_t a_val) {}
+		virtual void assign_impl([[maybe_unused]] integer_t a_val) {}
+		virtual void assign_impl([[maybe_unused]] unsigned_t a_val) {}
+		virtual void assign_impl([[maybe_unused]] float_t a_val) {}
+		virtual void assign_impl([[maybe_unused]] string_t&& a_val) {}
+		virtual void assign_impl([[maybe_unused]] const json& a_val) {}
+
+		[[nodiscard]] virtual string_t dump_impl() const { return Impl::format("%s: %s", key().c_str(), to_string().c_str()); }
+		[[nodiscard]] virtual string_t to_string_impl() const = 0;
+
+	private:
+		string_t _key;
+	};
+
+
+	class bSetting : public ISetting
+	{
+	public:
+		using value_type = boolean_t;
+
+		bSetting() = delete;
+		bSetting(string_t a_key, value_type a_value) : ISetting(std::move(a_key)), _value(std::move(a_value)) {}
+		virtual ~bSetting() = default;
+
+		[[nodiscard]] inline value_type& operator*() { return _value; }
+		[[nodiscard]] inline const value_type& operator*() const { return _value; }
+
+	protected:
+		virtual void assign_impl(boolean_t a_val) override { _value = static_cast<value_type>(a_val); }
+		virtual void assign_impl(integer_t a_val) override { _value = static_cast<value_type>(a_val); }
+		virtual void assign_impl(unsigned_t a_val) override { _value = static_cast<value_type>(a_val); }
+		virtual void assign_impl(float_t a_val) override { _value = static_cast<value_type>(a_val); }
+
+		[[nodiscard]] virtual string_t to_string_impl() const override { return _value ? "True" : "False"; }
+
+	private:
+		value_type _value;
+	};
+
+
+	class iSetting : public ISetting
+	{
+	public:
+		using value_type = integer_t;
+
+		iSetting() = delete;
+		iSetting(string_t a_key, value_type a_value) : ISetting(std::move(a_key)), _value(std::move(a_value)) {}
+		virtual ~iSetting() = default;
+
+		[[nodiscard]] inline value_type& operator*() { return _value; }
+		[[nodiscard]] inline const value_type& operator*() const { return _value; }
+
+	protected:
+		virtual void assign_impl(boolean_t a_val) override { _value = a_val ? 1 : 0; }
+		virtual void assign_impl(integer_t a_val) override { _value = static_cast<value_type>(a_val); }
+		virtual void assign_impl(unsigned_t a_val) override { _value = static_cast<value_type>(a_val); }
+		virtual void assign_impl(float_t a_val) override { _value = static_cast<value_type>(a_val); }
+
+		[[nodiscard]] virtual string_t to_string_impl() const override { return std::to_string(_value); }
+
+	private:
+		value_type _value;
+	};
+
+
+	class uSetting : public ISetting
+	{
+	public:
+		using value_type = unsigned_t;
+
+		uSetting() = delete;
+		uSetting(string_t a_key, value_type a_value) : ISetting(std::move(a_key)), _value(std::move(a_value)) {}
+		virtual ~uSetting() = default;
+
+		[[nodiscard]] inline value_type& operator*() { return _value; }
+		[[nodiscard]] inline const value_type& operator*() const { return _value; }
+
+	protected:
+		virtual void assign_impl(boolean_t a_val) override { _value = a_val ? 1 : 0; }
+		virtual void assign_impl(integer_t a_val) override { _value = static_cast<value_type>(a_val); }
+		virtual void assign_impl(unsigned_t a_val) override { _value = static_cast<value_type>(a_val); }
+		virtual void assign_impl(float_t a_val) override { _value = static_cast<value_type>(a_val); }
+
+		[[nodiscard]] virtual string_t to_string_impl() const override { return std::to_string(_value); }
+
+	private:
+		value_type _value;
+	};
+
+
+	class fSetting : public ISetting
+	{
+	public:
+		using value_type = float_t;
+
+		fSetting() = delete;
+		fSetting(string_t a_key, value_type a_value) : ISetting(std::move(a_key)), _value(std::move(a_value)) {}
+		virtual ~fSetting() = default;
+
+		[[nodiscard]] inline value_type& operator*() { return _value; }
+		[[nodiscard]] inline const value_type& operator*() const { return _value; }
+
+	protected:
+		virtual void assign_impl(boolean_t a_val) override { _value = a_val ? 1.0 : 0.0; }
+		virtual void assign_impl(integer_t a_val) override { _value = static_cast<value_type>(a_val); }
+		virtual void assign_impl(unsigned_t a_val) override { _value = static_cast<value_type>(a_val); }
+		virtual void assign_impl(float_t a_val) override { _value = static_cast<value_type>(a_val); }
+
+		[[nodiscard]] virtual string_t to_string_impl() const override { return std::to_string(_value); }
+
+	private:
+		value_type _value;
+	};
+
+
+	class sSetting : public ISetting
+	{
+	public:
+		using value_type = string_t;
+
+		sSetting() = delete;
+		sSetting(string_t a_key, value_type a_value) : ISetting(std::move(a_key)), _value(std::move(a_value)) {}
+		virtual ~sSetting() = default;
+
+		[[nodiscard]] inline value_type& operator*() { return _value; }
+		[[nodiscard]] inline const value_type& operator*() const { return _value; }
+
+		[[nodiscard]] inline value_type* operator->() { return std::addressof(_value); }
+		[[nodiscard]] inline const value_type* operator->() const { return std::addressof(_value); }
+
+	protected:
+		virtual void assign_impl(string_t&& a_val) override { _value = std::move(a_val); }
+
+		virtual string_t to_string_impl() const override { return _value; }
+
+	private:
+		value_type _value;
+	};
+
+
+	template <class> class aSetting;
+
+
+	template <>
+	class aSetting<string_t> : public ISetting
+	{
+	public:
+		using value_type = string_t;
+		using container_type = std::vector<value_type>;
+
+
+		aSetting() = delete;
+
+		aSetting(string_t a_key, std::initializer_list<value_type> a_init = {}) :
+			ISetting(std::move(a_key)),
+			_container(std::move(a_init))
+		{}
+
+		virtual ~aSetting() = default;
+
+		[[nodiscard]] container_type& operator*()
+		{
+			return _container;
+		}
+
+		[[nodiscard]] const container_type& operator*() const
+		{
+			return _container;
+		}
+
+		[[nodiscard]] container_type* operator->()
+		{
+			return std::addressof(_container);
+		}
+
+		[[nodiscard]] const container_type* operator->() const
+		{
+			return std::addressof(_container);
+		}
+
+	protected:
+		virtual void assign_impl(const json& a_val) override
+		{
+			_container.clear();
+			for (auto& val : a_val) {
+				_container.push_back(val.get<value_type>());
+			}
+		}
+
+		[[nodiscard]] virtual string_t dump_impl() const override
+		{
+			string_t dmp(Impl::format("%s:", key().c_str()));
+			for (auto& it : _container) {
+				dmp += Impl::format("\t%s", it.c_str());
+			}
+			return dmp;
+		}
+
+		[[nodiscard]] virtual string_t to_string_impl() const override
+		{
+			string_t str;
+			for (auto& it : _container) {
+				str.push_back('\t');
+				str.append(it);
+				str.push_back('\n');
+			}
+			return str;
+		}
+
+	private:
+		container_type _container;
+	};
+
+
+	inline std::pair<string_t, bool> load_settings(std::filesystem::path a_fileName, bool a_dumpParse = false, bool a_suppressWarnings = false)
+	{
+		using value_t = json::value_t;
+
+		std::pair<string_t, bool> result("", false);
+
+		std::basic_ifstream<char_t> inFile(a_fileName);
+		if (!inFile.is_open()) {
+			result.first += "Failed to open .json file!\n";
+			result.second = false;
+			return result;
+		}
+
+		json j;
+		try {
+			inFile >> j;
+			if (a_dumpParse) {
+				result.first += '\n';
+				result.first += std::move(j.dump(4));
+				result.first += "\n\n";
+			}
+
+			json::iterator it;
+			for (auto& setting : get_settings()) {
+				it = j.find(setting->key());
+
+				if (it == j.end()) {
+					if (!a_suppressWarnings) {
+						result.first += "Failed to find (";
+						result.first += setting->key();
+						result.first += ") within .json!\n";
+					}
+					continue;
+				}
+
+				switch (it->type()) {
+				case value_t::array:
+					setting->assign(it.value());
+					break;
+				case value_t::string:
+					setting->assign(it.value().get<string_t>());
+					break;
+				case value_t::boolean:
+					setting->assign(it.value().get<boolean_t>());
+					break;
+				case value_t::number_integer:
+					setting->assign(it.value().get<integer_t>());
+					break;
+				case value_t::number_unsigned:
+					setting->assign(it.value().get<unsigned_t>());
+					break;
+				case value_t::number_float:
+					setting->assign(it.value().get<float_t>());
+					break;
+				default:
+					result.first += "Parsed value is of invalid type(";
+					result.first += j.type_name();
+					result.first += ")!\n";
+				}
+			}
+		} catch (std::exception& e) {
+			result.first += "Failed to parse .json file!\n";
+			result.first += e.what();
+			result.first += '\n';
+			result.second = false;
+			return result;
+		}
+
+		result.second = true;
+		return result;
+	}
+
+
+	[[nodiscard]] inline string_t dump_settings()
+	{
+		string_t dmp;
+		for (auto& setting : get_settings()) {
+			dmp += setting->dump();
+		}
 	}
 }
 
 
-inline ISetting::ISetting(std::string a_key, bool a_consoleOK) :
-	_key(a_key)
+namespace std
 {
-	using Json2Settings::Settings;
-
-	Settings::settings().push_back(this);
-	if (a_consoleOK) {
-		Settings::consoleSettings().insert(std::make_pair(_key, this));
+	inline std::string to_string(const Json2Settings::ISetting& a_value)
+	{
+		return a_value.to_string();
 	}
 }

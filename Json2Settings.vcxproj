@@ -142,9 +142,6 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <None Include="exports.def" />
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="include\json.hpp" />
     <ClInclude Include="include\Json2Settings.h" />
   </ItemGroup>
