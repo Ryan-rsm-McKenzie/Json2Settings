@@ -375,8 +375,7 @@ namespace Json2Settings
 			inFile >> j;
 			if (a_dumpParse) {
 				result.first += '\n';
-				result.first += std::move(j.dump(4));
-				result.first += "\n\n";
+				result.first += j.dump(4);
 			}
 
 			json::iterator it;
@@ -433,9 +432,15 @@ namespace Json2Settings
 	[[nodiscard]] inline string_t dump_settings()
 	{
 		string_t dmp;
+		bool skip = true;
 		for (auto& setting : get_settings()) {
+			if (!skip) {
+				dmp.push_back('\n');
+			}
 			dmp += setting->dump();
+			skip = false;
 		}
+		return dmp;
 	}
 }
 
