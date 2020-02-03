@@ -128,15 +128,15 @@ namespace Json2Settings
 		inline void assign(const json& a_val) { assign_impl(a_val); }
 		inline void assign(json&& a_val) { assign_impl(a_val); }
 
-		inline ISetting& operator=(boolean_t a_val) { assign(a_val); }
-		inline ISetting& operator=(integer_t a_val) { assign(a_val); }
-		inline ISetting& operator=(unsigned_t a_val) { assign(a_val); }
-		inline ISetting& operator=(float_t a_val) { assign(a_val); }
-		inline ISetting& operator=(const char_t* a_val) { assign(a_val); }
-		inline ISetting& operator=(const string_t& a_val) { assign(a_val); }
-		inline ISetting& operator=(string_t&& a_val) { assign(std::move(a_val)); }
-		inline ISetting& operator=(const json& a_val) { assign(a_val); }
-		inline ISetting& operator=(json&& a_val) { assign(std::move(a_val)); }
+		inline ISetting& operator=(boolean_t a_val) { assign(a_val); return *this; }
+		inline ISetting& operator=(integer_t a_val) { assign(a_val); return *this; }
+		inline ISetting& operator=(unsigned_t a_val) { assign(a_val); return *this; }
+		inline ISetting& operator=(float_t a_val) { assign(a_val); return *this; }
+		inline ISetting& operator=(const char_t* a_val) { assign(a_val); return *this; }
+		inline ISetting& operator=(const string_t& a_val) { assign(a_val); return *this; }
+		inline ISetting& operator=(string_t&& a_val) { assign(std::move(a_val)); return *this; }
+		inline ISetting& operator=(const json& a_val) { assign(a_val); return *this; }
+		inline ISetting& operator=(json&& a_val) { assign(std::move(a_val)); return *this; }
 
 		[[nodiscard]] inline string_t dump() const { return dump_impl(); }
 		[[nodiscard]] inline string_t to_string() const { return to_string_impl(); }
@@ -334,9 +334,11 @@ namespace Json2Settings
 
 		[[nodiscard]] virtual string_t dump_impl() const override
 		{
-			string_t dmp(Impl::format("%s:", key().c_str()));
+			string_t dmp(key());
+			dmp += ':';
 			for (auto& it : _container) {
-				dmp += Impl::format("\t%s", it.c_str());
+				dmp += "\n\t";
+				dmp += it;
 			}
 			return dmp;
 		}
@@ -344,10 +346,13 @@ namespace Json2Settings
 		[[nodiscard]] virtual string_t to_string_impl() const override
 		{
 			string_t str;
+			bool skip = true;
 			for (auto& it : _container) {
-				str.push_back('\t');
-				str.append(it);
-				str.push_back('\n');
+				if (!skip) {
+					str += '\n';
+				}
+				str += it;
+				skip = false;
 			}
 			return str;
 		}
@@ -435,7 +440,7 @@ namespace Json2Settings
 		bool skip = true;
 		for (auto& setting : get_settings()) {
 			if (!skip) {
-				dmp.push_back('\n');
+				dmp += '\n';
 			}
 			dmp += setting->dump();
 			skip = false;
