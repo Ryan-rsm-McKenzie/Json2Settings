@@ -1,4 +1,5 @@
-#pragma once
+#ifndef Json2Settings_INCLUDED
+#define Json2Settings_INCLUDED
 
 #include <cstdarg>
 #include <cstdio>
@@ -11,10 +12,7 @@
 #include <utility>
 #include <vector>
 
-#include <CppCoreCheck\Warnings.h>
-#pragma warning(disable: ALL_CPPCORECHECK_WARNINGS)
 #include "json.hpp"
-#pragma warning(default: ALL_CPPCORECHECK_WARNINGS)
 
 
 namespace Json2Settings
@@ -116,7 +114,7 @@ namespace Json2Settings
 	public:
 		ISetting() = delete;
 		ISetting(string_t a_key) : _key(std::move(a_key)) { get_settings().push_back(this); }
-		virtual ~ISetting() { auto& set = get_settings(); auto it = std::find(set.begin(), set.end(), this); if (it != set.end()) set.erase(it); }
+		virtual ~ISetting() = 0 { auto& set = get_settings(); auto it = std::find(set.begin(), set.end(), this); if (it != set.end()) set.erase(it); }
 
 		inline void assign(boolean_t a_val) { assign_impl(a_val); }
 		inline void assign(integer_t a_val) { assign_impl(a_val); }
@@ -151,7 +149,7 @@ namespace Json2Settings
 		virtual void assign_impl([[maybe_unused]] const json& a_val) {}
 
 		[[nodiscard]] virtual string_t dump_impl() const { return Impl::format("%s: %s", key().c_str(), to_string().c_str()); }
-		[[nodiscard]] virtual string_t to_string_impl() const = 0;
+		[[nodiscard]] virtual string_t to_string_impl() const { return "<undefined>"; }
 
 	private:
 		string_t _key;
@@ -283,14 +281,22 @@ namespace Json2Settings
 	};
 
 
-	template <class> class aSetting;
+	namespace Impl
+	{
+		template <class T, class = void> struct is_get_defined : std::false_type {};
+		template <class T> struct is_get_defined<T, std::void_t<decltype(&json::get<T>)>> : std::true_type {};
+		template <class T> inline constexpr bool is_get_defined_v = is_get_defined<T>::value;
+	}
 
 
-	template <>
-	class aSetting<string_t> : public ISetting
+	template <class, class = void> class aSetting;
+
+
+	template <class T>
+	class aSetting<T, std::enable_if_t<Impl::is_get_defined_v<T>>> : public ISetting
 	{
 	public:
-		using value_type = string_t;
+		using value_type = T;
 		using container_type = std::vector<value_type>;
 
 
@@ -330,31 +336,6 @@ namespace Json2Settings
 			for (auto& val : a_val) {
 				_container.push_back(val.get<value_type>());
 			}
-		}
-
-		[[nodiscard]] virtual string_t dump_impl() const override
-		{
-			string_t dmp(key());
-			dmp += ':';
-			for (auto& it : _container) {
-				dmp += "\n\t";
-				dmp += it;
-			}
-			return dmp;
-		}
-
-		[[nodiscard]] virtual string_t to_string_impl() const override
-		{
-			string_t str;
-			bool skip = true;
-			for (auto& it : _container) {
-				if (!skip) {
-					str += '\n';
-				}
-				str += it;
-				skip = false;
-			}
-			return str;
 		}
 
 	private:
@@ -457,3 +438,6 @@ namespace std
 		return a_value.to_string();
 	}
 }
+
+
+#endif	// Json2Settings_INCLUDED
