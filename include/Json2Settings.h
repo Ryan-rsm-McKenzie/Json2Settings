@@ -443,22 +443,25 @@ namespace Json2Settings
 
 				switch (it->type()) {
 				case value_t::array:
-					setting->assign(it.value());
+					setting->assign(*it);
 					break;
 				case value_t::string:
-					setting->assign(it.value().get<string_t>());
+					setting->assign(it->get<string_t>());
 					break;
 				case value_t::boolean:
-					setting->assign(it.value().get<boolean_t>());
+					setting->assign(it->get<boolean_t>());
 					break;
 				case value_t::number_integer:
-					setting->assign(it.value().get<integer_t>());
+					setting->assign(it->get<integer_t>());
 					break;
 				case value_t::number_unsigned:
-					setting->assign(it.value().get<unsigned_t>());
+					setting->assign(it->get<unsigned_t>());
 					break;
 				case value_t::number_float:
-					setting->assign(it.value().get<float_t>());
+					setting->assign(it->get<float_t>());
+					break;
+				case value_t::object:
+					setting->assign(*it);
 					break;
 				default:
 					result.first += "Parsed value is of invalid type(";
