@@ -109,6 +109,7 @@ namespace Json2Settings
 	}
 
 
+	// interface
 	class ISetting
 	{
 	public:
@@ -156,6 +157,7 @@ namespace Json2Settings
 	};
 
 
+	// boolean
 	class bSetting : public ISetting
 	{
 	public:
@@ -181,6 +183,7 @@ namespace Json2Settings
 	};
 
 
+	// integer
 	class iSetting : public ISetting
 	{
 	public:
@@ -206,6 +209,7 @@ namespace Json2Settings
 	};
 
 
+	// unsigned integer
 	class uSetting : public ISetting
 	{
 	public:
@@ -231,6 +235,7 @@ namespace Json2Settings
 	};
 
 
+	// float
 	class fSetting : public ISetting
 	{
 	public:
@@ -256,6 +261,7 @@ namespace Json2Settings
 	};
 
 
+	// string
 	class sSetting : public ISetting
 	{
 	public:
@@ -292,13 +298,13 @@ namespace Json2Settings
 	template <class, class = void> class aSetting;
 
 
+	// array
 	template <class T>
 	class aSetting<T, std::enable_if_t<Impl::is_get_defined_v<T>>> : public ISetting
 	{
 	public:
 		using value_type = T;
 		using container_type = std::vector<value_type>;
-
 
 		aSetting() = delete;
 
@@ -340,6 +346,64 @@ namespace Json2Settings
 
 	private:
 		container_type _container;
+	};
+
+
+	template <class, class = void> class oSetting;
+
+
+	// object
+	template <class T>
+	class oSetting<T, std::enable_if_t<Impl::is_get_defined_v<T>>> : public ISetting
+	{
+	public:
+		using value_type = T;
+
+
+		oSetting() = delete;
+
+		template <std::enable_if_t<std::is_default_constructible_v<value_type>, int> = 0>
+		oSetting(string_t a_key) :
+			ISetting(std::move(a_key)),
+			_value{}
+		{}
+
+		template <class... Args, std::enable_if_t<std::is_constructible_v<value_type, Args...>, int> = 0>
+		explicit oSetting(string_t a_key, [[maybe_unused]] std::in_place_t, Args&&... a_args) :
+			ISetting(std::move(a_key)),
+			_value(std::forward<Args>(a_args)...)
+		{}
+
+		virtual ~oSetting() = default;
+
+		[[nodiscard]] value_type& operator*()
+		{
+			return _value;
+		}
+
+		[[nodiscard]] const value_type& operator*() const
+		{
+			return _value;
+		}
+
+		[[nodiscard]] value_type* operator->()
+		{
+			return std::addressof(_value);
+		}
+
+		[[nodiscard]] const value_type* operator->() const
+		{
+			return std::addressof(_value);
+		}
+
+	protected:
+		virtual void assign_impl(const json& a_val) override
+		{
+			a_val.get_to(_value);
+		}
+
+	private:
+		T _value;
 	};
 
 
