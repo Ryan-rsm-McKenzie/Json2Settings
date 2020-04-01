@@ -1,8 +1,6 @@
 #ifndef Json2Settings_INCLUDED
 #define Json2Settings_INCLUDED
 
-#include <cstdarg>
-#include <cstdio>
 #include <exception>
 #include <filesystem>
 #include <fstream>
@@ -19,90 +17,21 @@ namespace Json2Settings
 {
 	using json = nlohmann::json;
 
-	using boolean_t = json::boolean_t;
-	using integer_t = json::number_integer_t;
-	using unsigned_t = json::number_unsigned_t;
-	using float_t = json::number_float_t;
-	using string_t = json::string_t;
-	using char_t = string_t::value_type;
-
-	static_assert(std::is_same<std::string, string_t>::value);
+	using boolean_t = typename json::boolean_t;
+	using integer_t = typename json::number_integer_t;
+	using unsigned_t = typename json::number_unsigned_t;
+	using float_t = typename json::number_float_t;
+	using string_t = typename json::string_t;
+	using char_t = typename string_t::value_type;
 
 
-	namespace Impl
-	{
-		class VArgFormatter
-		{
-		public:
-			VArgFormatter(const char_t* a_format, ...) :
-				_buf()
-			{
-				std::va_list args;
-				va_start(args, a_format);
-				do_format(a_format, args);
-				va_end(args);
-			}
-
-			VArgFormatter(const char_t* a_format, std::va_list a_args) :
-				_buf()
-			{
-				do_format(a_format, a_args);
-			}
-
-			inline void operator()(const char_t* a_format, ...)
-			{
-				std::va_list args;
-				va_start(args, a_format);
-				do_format(a_format, args);
-				va_end(args);
-			}
-
-			inline void operator()(const char_t* a_format, std::va_list a_args)
-			{
-				do_format(a_format, a_args);
-			}
-
-			[[nodiscard]] inline string_t str() const
-			{
-				return c_str();
-			}
-
-			[[nodiscard]] inline const char_t* c_str() const
-			{
-				return _buf.data();
-			}
-
-		private:
-			inline void do_format(const char_t* a_format, std::va_list a_args)
-			{
-				std::va_list argsCopy;
-				va_copy(argsCopy, a_args);
-
-				_buf.resize(static_cast<std::size_t>(std::vsnprintf(0, 0, a_format, a_args)) + 1);
-				std::vsnprintf(_buf.data(), _buf.size(), a_format, argsCopy);
-
-				va_end(argsCopy);
-			}
-
-			std::vector<char_t> _buf;
-		};
-
-
-		[[nodiscard]] inline string_t format(const char* a_format, ...)
-		{
-			std::va_list args;
-			va_start(args, a_format);
-			string_t str(VArgFormatter(a_format, args).str());
-			va_end(args);
-			return str;
-		}
-	}
+	static_assert(std::is_same_v<std::string, string_t>);
 
 
 	class ISetting;
 
 
-	inline std::vector<ISetting*>& get_settings()
+	inline std::vector<ISetting*>& get_settings() noexcept
 	{
 		static std::vector<ISetting*> settings;
 		return settings;
@@ -114,8 +43,21 @@ namespace Json2Settings
 	{
 	public:
 		ISetting() = delete;
-		ISetting(string_t a_key) : _key(std::move(a_key)) { get_settings().push_back(this); }
-		virtual ~ISetting() = 0 { auto& set = get_settings(); auto it = std::find(set.begin(), set.end(), this); if (it != set.end()) set.erase(it); }
+		inline ISetting(string_t a_key) :
+			_key(std::move(a_key))
+		{
+			auto& settings = get_settings();
+			settings.push_back(this);
+		}
+
+		virtual ~ISetting() = 0
+		{
+			auto& settings = get_settings();
+			auto it = std::find(settings.begin(), settings.end(), this);
+			if (it != settings.end()) {
+				settings.erase(it);
+			}
+		}
 
 		inline void assign(boolean_t a_val) { assign_impl(a_val); }
 		inline void assign(integer_t a_val) { assign_impl(a_val); }
@@ -127,19 +69,63 @@ namespace Json2Settings
 		inline void assign(const json& a_val) { assign_impl(a_val); }
 		inline void assign(json&& a_val) { assign_impl(a_val); }
 
-		inline ISetting& operator=(boolean_t a_val) { assign(a_val); return *this; }
-		inline ISetting& operator=(integer_t a_val) { assign(a_val); return *this; }
-		inline ISetting& operator=(unsigned_t a_val) { assign(a_val); return *this; }
-		inline ISetting& operator=(float_t a_val) { assign(a_val); return *this; }
-		inline ISetting& operator=(const char_t* a_val) { assign(a_val); return *this; }
-		inline ISetting& operator=(const string_t& a_val) { assign(a_val); return *this; }
-		inline ISetting& operator=(string_t&& a_val) { assign(std::move(a_val)); return *this; }
-		inline ISetting& operator=(const json& a_val) { assign(a_val); return *this; }
-		inline ISetting& operator=(json&& a_val) { assign(std::move(a_val)); return *this; }
+		inline ISetting& operator=(boolean_t a_val)
+		{
+			assign(a_val);
+			return *this;
+		}
+
+		inline ISetting& operator=(integer_t a_val)
+		{
+			assign(a_val);
+			return *this;
+		}
+
+		inline ISetting& operator=(unsigned_t a_val)
+		{
+			assign(a_val);
+			return *this;
+		}
+
+		inline ISetting& operator=(float_t a_val)
+		{
+			assign(a_val);
+			return *this;
+		}
+
+		inline ISetting& operator=(const char_t* a_val)
+		{
+			assign(a_val);
+			return *this;
+		}
+
+		inline ISetting& operator=(const string_t& a_val)
+		{
+			assign(a_val);
+			return *this;
+		}
+
+		inline ISetting& operator=(string_t&& a_val)
+		{
+			assign(std::move(a_val));
+			return *this;
+		}
+
+		inline ISetting& operator=(const json& a_val)
+		{
+			assign(a_val);
+			return *this;
+		}
+
+		inline ISetting& operator=(json&& a_val)
+		{
+			assign(std::move(a_val));
+			return *this;
+		}
 
 		[[nodiscard]] inline string_t dump() const { return dump_impl(); }
 		[[nodiscard]] inline string_t to_string() const { return to_string_impl(); }
-		[[nodiscard]] inline const string_t& key() const { return _key; }
+		[[nodiscard]] constexpr const string_t& key() const noexcept { return _key; }
 
 	protected:
 		virtual void assign_impl([[maybe_unused]] boolean_t a_val) {}
@@ -149,12 +135,25 @@ namespace Json2Settings
 		virtual void assign_impl([[maybe_unused]] string_t&& a_val) {}
 		virtual void assign_impl([[maybe_unused]] const json& a_val) {}
 
-		[[nodiscard]] virtual string_t dump_impl() const { return Impl::format("%s: %s", key().c_str(), to_string().c_str()); }
+		[[nodiscard]] virtual string_t dump_impl() const
+		{
+			string_t dmp = key();
+			dmp += ": ";
+			dmp += to_string();
+			return dmp;
+		}
+
 		[[nodiscard]] virtual string_t to_string_impl() const { return "<undefined>"; }
 
 	private:
 		string_t _key;
 	};
+
+
+	inline std::string to_string(const ISetting& a_value)
+	{
+		return a_value.to_string();
+	}
 
 
 	// boolean
@@ -164,11 +163,18 @@ namespace Json2Settings
 		using value_type = boolean_t;
 
 		bSetting() = delete;
-		bSetting(string_t a_key, value_type a_value) : ISetting(std::move(a_key)), _value(std::move(a_value)) {}
+		inline bSetting(string_t a_key, value_type a_value) :
+			ISetting(std::move(a_key)),
+			_value(std::move(a_value))
+		{}
+
 		virtual ~bSetting() = default;
 
-		[[nodiscard]] inline value_type& operator*() { return _value; }
-		[[nodiscard]] inline const value_type& operator*() const { return _value; }
+		[[nodiscard]] constexpr value_type& operator*() noexcept { return _value; }
+		[[nodiscard]] constexpr const value_type& operator*() const noexcept { return _value; }
+
+		[[nodiscard]] constexpr value_type* operator->() noexcept { return std::addressof(_value); }
+		[[nodiscard]] constexpr const value_type* operator->() const noexcept { return std::addressof(_value); }
 
 	protected:
 		virtual void assign_impl(boolean_t a_val) override { _value = static_cast<value_type>(a_val); }
@@ -190,11 +196,18 @@ namespace Json2Settings
 		using value_type = integer_t;
 
 		iSetting() = delete;
-		iSetting(string_t a_key, value_type a_value) : ISetting(std::move(a_key)), _value(std::move(a_value)) {}
+		inline iSetting(string_t a_key, value_type a_value) :
+			ISetting(std::move(a_key)),
+			_value(std::move(a_value))
+		{}
+
 		virtual ~iSetting() = default;
 
-		[[nodiscard]] inline value_type& operator*() { return _value; }
-		[[nodiscard]] inline const value_type& operator*() const { return _value; }
+		[[nodiscard]] constexpr value_type& operator*() noexcept { return _value; }
+		[[nodiscard]] constexpr const value_type& operator*() const noexcept { return _value; }
+
+		[[nodiscard]] constexpr value_type* operator->() noexcept { return std::addressof(_value); }
+		[[nodiscard]] constexpr const value_type* operator->() const noexcept { return std::addressof(_value); }
 
 	protected:
 		virtual void assign_impl(boolean_t a_val) override { _value = a_val ? 1 : 0; }
@@ -202,7 +215,11 @@ namespace Json2Settings
 		virtual void assign_impl(unsigned_t a_val) override { _value = static_cast<value_type>(a_val); }
 		virtual void assign_impl(float_t a_val) override { _value = static_cast<value_type>(a_val); }
 
-		[[nodiscard]] virtual string_t to_string_impl() const override { return std::to_string(_value); }
+		[[nodiscard]] virtual string_t to_string_impl() const override
+		{
+			using std::to_string;
+			return to_string(_value);
+		}
 
 	private:
 		value_type _value;
@@ -216,11 +233,18 @@ namespace Json2Settings
 		using value_type = unsigned_t;
 
 		uSetting() = delete;
-		uSetting(string_t a_key, value_type a_value) : ISetting(std::move(a_key)), _value(std::move(a_value)) {}
+		inline uSetting(string_t a_key, value_type a_value) :
+			ISetting(std::move(a_key)),
+			_value(std::move(a_value))
+		{}
+
 		virtual ~uSetting() = default;
 
-		[[nodiscard]] inline value_type& operator*() { return _value; }
-		[[nodiscard]] inline const value_type& operator*() const { return _value; }
+		[[nodiscard]] constexpr value_type& operator*() noexcept { return _value; }
+		[[nodiscard]] constexpr const value_type& operator*() const noexcept { return _value; }
+
+		[[nodiscard]] constexpr value_type* operator->() noexcept { return std::addressof(_value); }
+		[[nodiscard]] constexpr const value_type* operator->() const noexcept { return std::addressof(_value); }
 
 	protected:
 		virtual void assign_impl(boolean_t a_val) override { _value = a_val ? 1 : 0; }
@@ -228,7 +252,11 @@ namespace Json2Settings
 		virtual void assign_impl(unsigned_t a_val) override { _value = static_cast<value_type>(a_val); }
 		virtual void assign_impl(float_t a_val) override { _value = static_cast<value_type>(a_val); }
 
-		[[nodiscard]] virtual string_t to_string_impl() const override { return std::to_string(_value); }
+		[[nodiscard]] virtual string_t to_string_impl() const override
+		{
+			using std::to_string;
+			return to_string(_value);
+		}
 
 	private:
 		value_type _value;
@@ -242,11 +270,18 @@ namespace Json2Settings
 		using value_type = float_t;
 
 		fSetting() = delete;
-		fSetting(string_t a_key, value_type a_value) : ISetting(std::move(a_key)), _value(std::move(a_value)) {}
+		inline fSetting(string_t a_key, value_type a_value) :
+			ISetting(std::move(a_key)),
+			_value(std::move(a_value))
+		{}
+
 		virtual ~fSetting() = default;
 
-		[[nodiscard]] inline value_type& operator*() { return _value; }
-		[[nodiscard]] inline const value_type& operator*() const { return _value; }
+		[[nodiscard]] constexpr value_type& operator*() noexcept { return _value; }
+		[[nodiscard]] constexpr const value_type& operator*() const noexcept { return _value; }
+
+		[[nodiscard]] constexpr value_type* operator->() noexcept { return std::addressof(_value); }
+		[[nodiscard]] constexpr const value_type* operator->() const noexcept { return std::addressof(_value); }
 
 	protected:
 		virtual void assign_impl(boolean_t a_val) override { _value = a_val ? 1.0 : 0.0; }
@@ -254,7 +289,11 @@ namespace Json2Settings
 		virtual void assign_impl(unsigned_t a_val) override { _value = static_cast<value_type>(a_val); }
 		virtual void assign_impl(float_t a_val) override { _value = static_cast<value_type>(a_val); }
 
-		[[nodiscard]] virtual string_t to_string_impl() const override { return std::to_string(_value); }
+		[[nodiscard]] virtual string_t to_string_impl() const override
+		{
+			using std::to_string;
+			return to_string(_value);
+		}
 
 	private:
 		value_type _value;
@@ -268,14 +307,18 @@ namespace Json2Settings
 		using value_type = string_t;
 
 		sSetting() = delete;
-		sSetting(string_t a_key, value_type a_value) : ISetting(std::move(a_key)), _value(std::move(a_value)) {}
+		inline sSetting(string_t a_key, value_type a_value) :
+			ISetting(std::move(a_key)),
+			_value(std::move(a_value))
+		{}
+
 		virtual ~sSetting() = default;
 
-		[[nodiscard]] inline value_type& operator*() { return _value; }
-		[[nodiscard]] inline const value_type& operator*() const { return _value; }
+		[[nodiscard]] constexpr value_type& operator*() noexcept { return _value; }
+		[[nodiscard]] constexpr const value_type& operator*() const noexcept { return _value; }
 
-		[[nodiscard]] inline value_type* operator->() { return std::addressof(_value); }
-		[[nodiscard]] inline const value_type* operator->() const { return std::addressof(_value); }
+		[[nodiscard]] constexpr value_type* operator->() noexcept { return std::addressof(_value); }
+		[[nodiscard]] constexpr const value_type* operator->() const noexcept { return std::addressof(_value); }
 
 	protected:
 		virtual void assign_impl(string_t&& a_val) override { _value = std::move(a_val); }
@@ -289,13 +332,23 @@ namespace Json2Settings
 
 	namespace Impl
 	{
-		template <class T, class = void> struct is_get_defined : std::false_type {};
-		template <class T> struct is_get_defined<T, std::void_t<decltype(&json::get<T>)>> : std::true_type {};
-		template <class T> inline constexpr bool is_get_defined_v = is_get_defined<T>::value;
+		template <class T, class = void>
+		struct is_get_defined :
+			std::false_type
+		{};
+
+		template <class T>
+		struct is_get_defined<T, std::void_t<decltype(&json::get<T>)>> :
+			std::true_type
+		{};
+
+		template <class T>
+		inline constexpr bool is_get_defined_v = is_get_defined<T>::value;
 	}
 
 
-	template <class, class = void> class aSetting;
+	template <class, class = void>
+	class aSetting;
 
 
 	// array
@@ -308,32 +361,23 @@ namespace Json2Settings
 
 		aSetting() = delete;
 
-		aSetting(string_t a_key, std::initializer_list<value_type> a_init = {}) :
+		inline aSetting(string_t a_key) :
+			ISetting(std::move(a_key)),
+			_container()
+		{}
+
+		inline aSetting(string_t a_key, std::initializer_list<value_type> a_init) :
 			ISetting(std::move(a_key)),
 			_container(std::move(a_init))
 		{}
 
 		virtual ~aSetting() = default;
 
-		[[nodiscard]] container_type& operator*()
-		{
-			return _container;
-		}
+		[[nodiscard]] constexpr container_type& operator*() noexcept { return _container; }
+		[[nodiscard]] constexpr const container_type& operator*() const noexcept { return _container; }
 
-		[[nodiscard]] const container_type& operator*() const
-		{
-			return _container;
-		}
-
-		[[nodiscard]] container_type* operator->()
-		{
-			return std::addressof(_container);
-		}
-
-		[[nodiscard]] const container_type* operator->() const
-		{
-			return std::addressof(_container);
-		}
+		[[nodiscard]] constexpr container_type* operator->() noexcept { return std::addressof(_container); }
+		[[nodiscard]] constexpr const container_type* operator->() const noexcept { return std::addressof(_container); }
 
 	protected:
 		virtual void assign_impl(const json& a_val) override
@@ -349,7 +393,8 @@ namespace Json2Settings
 	};
 
 
-	template <class, class = void> class oSetting;
+	template <class, class = void>
+	class oSetting;
 
 
 	// object
@@ -359,51 +404,33 @@ namespace Json2Settings
 	public:
 		using value_type = T;
 
-
 		oSetting() = delete;
 
 		template <std::enable_if_t<std::is_default_constructible_v<value_type>, int> = 0>
-		oSetting(string_t a_key) :
+		inline oSetting(string_t a_key) :
 			ISetting(std::move(a_key)),
 			_value{}
 		{}
 
 		template <class... Args, std::enable_if_t<std::is_constructible_v<value_type, Args...>, int> = 0>
-		explicit oSetting(string_t a_key, [[maybe_unused]] std::in_place_t, Args&&... a_args) :
+		inline explicit oSetting(string_t a_key, [[maybe_unused]] std::in_place_t, Args&&... a_args) :
 			ISetting(std::move(a_key)),
 			_value(std::forward<Args>(a_args)...)
 		{}
 
 		virtual ~oSetting() = default;
 
-		[[nodiscard]] value_type& operator*()
-		{
-			return _value;
-		}
+		[[nodiscard]] constexpr value_type& operator*() noexcept { return _value; }
+		[[nodiscard]] constexpr const value_type& operator*() const noexcept { return _value; }
 
-		[[nodiscard]] const value_type& operator*() const
-		{
-			return _value;
-		}
-
-		[[nodiscard]] value_type* operator->()
-		{
-			return std::addressof(_value);
-		}
-
-		[[nodiscard]] const value_type* operator->() const
-		{
-			return std::addressof(_value);
-		}
+		[[nodiscard]] constexpr value_type* operator->() noexcept { return std::addressof(_value); }
+		[[nodiscard]] constexpr const value_type* operator->() const noexcept { return std::addressof(_value); }
 
 	protected:
-		virtual void assign_impl(const json& a_val) override
-		{
-			a_val.get_to(_value);
-		}
+		virtual void assign_impl(const json& a_val) override { a_val.get_to(_value); }
 
 	private:
-		T _value;
+		value_type _value;
 	};
 
 
@@ -469,7 +496,7 @@ namespace Json2Settings
 					result.first += ")!\n";
 				}
 			}
-		} catch (std::exception& e) {
+		} catch (const std::exception& e) {
 			result.first += "Failed to parse .json file!\n";
 			result.first += e.what();
 			result.first += '\n';
@@ -485,24 +512,14 @@ namespace Json2Settings
 	[[nodiscard]] inline string_t dump_settings()
 	{
 		string_t dmp;
-		bool skip = true;
-		for (auto& setting : get_settings()) {
-			if (!skip) {
-				dmp += '\n';
+		const auto& settings = get_settings();
+		if (!settings.empty()) {
+			dmp += '\n';
+			for (auto& setting : settings) {
+				dmp += setting->dump();
 			}
-			dmp += setting->dump();
-			skip = false;
 		}
 		return dmp;
-	}
-}
-
-
-namespace std
-{
-	inline std::string to_string(const Json2Settings::ISetting& a_value)
-	{
-		return a_value.to_string();
 	}
 }
 
