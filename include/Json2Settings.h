@@ -1,5 +1,4 @@
-#ifndef Json2Settings_INCLUDED
-#define Json2Settings_INCLUDED
+#pragma once
 
 #include <exception>
 #include <filesystem>
@@ -10,7 +9,7 @@
 #include <utility>
 #include <vector>
 
-#include "json.hpp"
+#include "nlohmann/json.hpp"
 
 
 namespace Json2Settings
@@ -522,6 +521,3 @@ namespace Json2Settings
 		return dmp;
 	}
 }
-
-
-#endif	// Json2Settings_INCLUDED

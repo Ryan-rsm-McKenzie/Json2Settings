@@ -2,14 +2,11 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="include">
-      <UniqueIdentifier>{aee06ac9-1bc5-42ef-858c-7657bb1ee832}</UniqueIdentifier>
+      <UniqueIdentifier>{ff57cbe3-8082-448e-9d35-9652861ac4ad}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\Json2Settings.h">
-      <Filter>include</Filter>
-    </ClInclude>
-    <ClInclude Include="include\json.hpp">
       <Filter>include</Filter>
     </ClInclude>
   </ItemGroup>
