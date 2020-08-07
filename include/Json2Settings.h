@@ -9,7 +9,7 @@
 #include <utility>
 #include <vector>
 
-#include "nlohmann/json.hpp"
+#include <nlohmann/json.hpp>
 
 
 namespace Json2Settings
